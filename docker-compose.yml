@@ -1,0 +1,46 @@
+services:
+  weather-api:
+    build: tools/weather-api
+    ports:
+      - "8001:8001"
+    env_file:
+      - tools/weather-api/.env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  perplexity-search:
+    build: tools/perplexity-search
+    ports:
+      - "8002:8002"
+    env_file:
+      - tools/perplexity-search/.env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  file-converter:
+    build: tools/file-converter
+    ports:
+      - "8003:8003"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  talk-to-agent:
+    build: tools/talk-to-agent
+    ports:
+      - "8004:8004"
+    env_file:
+      - tools/talk-to-agent/.env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

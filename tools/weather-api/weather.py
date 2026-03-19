@@ -93,6 +93,9 @@ class WeatherHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/health":
+            self._respond(200, {"status": "ok", "tool": "weather-api"})
+            return
         if parsed.path != "/weather":
             self._respond(404, {"error": "Not found. Use GET /weather?city=London"})
             return

@@ -400,6 +400,10 @@ class ConvertHandler(BaseHTTPRequestHandler):
         import urllib.parse
         parsed = urllib.parse.urlparse(self.path)
 
+        if parsed.path == "/health":
+            self._respond(200, {"status": "ok", "tool": "file-converter"})
+            return
+
         if parsed.path == "/conversions":
             self._respond(200, list_conversions())
             return
