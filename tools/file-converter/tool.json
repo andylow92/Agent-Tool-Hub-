@@ -1,0 +1,24 @@
+{
+  "name": "file_converter",
+  "description": "Convert file content between formats. Supports CSV, TSV, JSON, PDF, HTML, Markdown, XLSX, and XML. Returns structured data agents can parse. Binary formats (PDF, XLSX) must be base64-encoded.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "content": {
+        "type": "string",
+        "description": "The file content to convert. For text formats (CSV, JSON, HTML, etc.) send raw text. For binary formats (PDF, XLSX) send base64-encoded content."
+      },
+      "from": {
+        "type": "string",
+        "enum": ["csv", "tsv", "json", "pdf", "html", "markdown", "xlsx", "xml"],
+        "description": "Source format of the content"
+      },
+      "to": {
+        "type": "string",
+        "enum": ["csv", "tsv", "json", "text", "html", "xml"],
+        "description": "Target format to convert to"
+      }
+    },
+    "required": ["content", "from", "to"]
+  }
+}
