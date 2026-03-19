@@ -1,0 +1,20 @@
+{
+  "name": "get_weather",
+  "description": "Get current weather conditions for a city. Returns temperature, humidity, wind, and conditions in a structured format.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "city": {
+        "type": "string",
+        "description": "City name, optionally with country code (e.g., 'London' or 'London,GB')"
+      },
+      "units": {
+        "type": "string",
+        "enum": ["metric", "imperial", "standard"],
+        "default": "metric",
+        "description": "Temperature units: 'metric' (Celsius), 'imperial' (Fahrenheit), or 'standard' (Kelvin)"
+      }
+    },
+    "required": ["city"]
+  }
+}

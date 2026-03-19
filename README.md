@@ -8,6 +8,14 @@ This repo is a shared toolbox for people building agent systems, copilots, assis
 
 ---
 
+## Tools
+
+| Tool | Description | Status |
+|------|-------------|--------|
+| [weather-api](tools/weather-api/) | Get current weather for any city via OpenWeatherMap. Zero dependencies, standalone HTTP server. | Stable |
+
+---
+
 ## Why This Exists
 
 People building AI agents often end up creating the same kinds of tools again and again: file readers, search wrappers, browser helpers, code runners, API adapters, memory utilities, and other small building blocks.
