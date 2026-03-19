@@ -21,11 +21,17 @@
 ├── tools/
 │   ├── _template/         ← Template for creating new tools
 │   │   └── README.md
-│   └── weather-api/       ← First tool: weather lookup
-│       ├── README.md      ← Tool docs (inputs, outputs, setup)
-│       ├── weather.py     ← Source code (Python, stdlib only)
+│   ├── weather-api/       ← Weather lookup tool
+│   │   ├── README.md      ← Tool docs (inputs, outputs, setup)
+│   │   ├── weather.py     ← Source code (Python, stdlib only)
+│   │   ├── tool.json      ← Function-calling schema
+│   │   ├── Dockerfile     ← Container deployment
+│   │   └── requirements.txt
+│   └── perplexity-search/ ← AI-powered web search tool
+│       ├── README.md
+│       ├── search.py      ← Source code (Python, stdlib only)
 │       ├── tool.json      ← Function-calling schema
-│       ├── Dockerfile     ← Container deployment
+│       ├── Dockerfile
 │       └── requirements.txt
 ```
 
@@ -43,6 +49,112 @@
 | Tool | Folder | Type | Endpoint | Auth Required |
 |------|--------|------|----------|---------------|
 | **Weather API** | `tools/weather-api/` | HTTP GET | `/weather?city={city}&units={units}` | Yes — `OPENWEATHER_API_KEY` env var |
+| **Perplexity Search** | `tools/perplexity-search/` | HTTP GET | `/search?q={query}` | Yes — `PERPLEXITY_API_KEY` env var |
+
+---
+
+## Tool: Perplexity Search
+
+### Quick reference
+
+- **What:** AI-powered web search — returns a direct answer with citations, not raw links.
+- **Where:** `tools/perplexity-search/search.py`
+- **How to call:** HTTP GET or Python import.
+
+### HTTP endpoint
+
+```
+GET /search?q={query}&model={model}&recency={recency}&max_tokens={max_tokens}
+```
+
+### Parameters
+
+| Name         | Type    | Required | Default  | Values                                  |
+|-------------|---------|----------|----------|-----------------------------------------|
+| `q`         | string  | YES      | —        | The question or search query            |
+| `model`     | string  | no       | `sonar`  | `sonar` (fast) or `sonar-pro` (deeper, more citations) |
+| `recency`   | string  | no       | —        | `day`, `week`, `month`, `year` — filter by source freshness |
+| `max_tokens`| integer | no       | `1024`   | Maximum answer length in tokens         |
+
+### Response schema
+
+```json
+{
+  "answer": "string (the synthesized answer, may contain [1] [2] citation references)",
+  "citations": ["string (URL)", "string (URL)"],
+  "model": "string (sonar or sonar-pro)",
+  "usage": {
+    "prompt_tokens": "int",
+    "completion_tokens": "int",
+    "total_tokens": "int"
+  }
+}
+```
+
+### Error response
+
+```json
+{
+  "error": "string describing what went wrong"
+}
+```
+
+Common errors:
+- `"PERPLEXITY_API_KEY environment variable is not set"` — set the env var before starting.
+- `"API error 401: Invalid API key"` — key is wrong or expired.
+- `"Network error: ..."` — cannot reach Perplexity API. Check connectivity.
+
+### Function-calling schema
+
+Load `tools/perplexity-search/tool.json` directly as a tool definition:
+
+```json
+{
+  "name": "perplexity_search",
+  "description": "Search the web using Perplexity Sonar AI. Returns a direct, synthesized answer with citations.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": { "type": "string", "description": "The question or search query" },
+      "model": { "type": "string", "enum": ["sonar", "sonar-pro"], "default": "sonar" },
+      "recency": { "type": "string", "enum": ["day", "week", "month", "year"] },
+      "max_tokens": { "type": "integer", "default": 1024 }
+    },
+    "required": ["query"]
+  }
+}
+```
+
+### Python import (no server)
+
+```python
+import os
+os.environ["PERPLEXITY_API_KEY"] = "your_key"
+
+from tools.perplexity_search.search import search
+
+result = search("What is quantum computing?")
+if "error" in result:
+    print(f"Failed: {result['error']}")
+else:
+    print(result["answer"])
+    for i, url in enumerate(result["citations"], 1):
+        print(f"  [{i}] {url}")
+```
+
+### Starting the server
+
+```bash
+export PERPLEXITY_API_KEY=your_key_here
+python tools/perplexity-search/search.py
+# Runs on http://localhost:8002
+```
+
+### Limits
+
+- ~50 requests/minute depending on API tier.
+- 30-second timeout per request.
+- Pricing: $1/M tokens (input and output).
 
 ---
 
@@ -203,4 +315,4 @@ See `CONTRIBUTING.md` for full guidelines.
 - **Environment variables for secrets.** Never hardcode API keys.
 - **Each tool is self-contained.** No cross-tool dependencies.
 - **`tool.json` is the machine-readable contract.** Use it for function calling.
-- **Default port for tools is 8001+.** Weather API uses 8001. Next tool should use 8002, etc.
+- **Default port for tools is 8001+.** Weather API uses 8001, Perplexity Search uses 8002. Next tool should use 8003, etc.

@@ -1,0 +1,30 @@
+{
+  "name": "perplexity_search",
+  "description": "Search the web using Perplexity Sonar AI. Returns a direct, synthesized answer with citations instead of raw search links. Ideal for agents that need factual, up-to-date information.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "The question or search query (e.g., 'What is the capital of France?' or 'latest AI research breakthroughs')"
+      },
+      "model": {
+        "type": "string",
+        "enum": ["sonar", "sonar-pro"],
+        "default": "sonar",
+        "description": "Search model: 'sonar' (fast, lightweight) or 'sonar-pro' (deeper answers, more citations)"
+      },
+      "recency": {
+        "type": "string",
+        "enum": ["day", "week", "month", "year"],
+        "description": "Filter sources by how recent they are. Omit for no time filter."
+      },
+      "max_tokens": {
+        "type": "integer",
+        "default": 1024,
+        "description": "Maximum length of the answer in tokens"
+      }
+    },
+    "required": ["query"]
+  }
+}

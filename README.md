@@ -13,6 +13,7 @@ This repo is a shared toolbox for people building agent systems, copilots, assis
 | Tool | Description | Status |
 |------|-------------|--------|
 | [weather-api](tools/weather-api/) | Get current weather for any city via OpenWeatherMap. Zero dependencies, standalone HTTP server. | Stable |
+| [perplexity-search](tools/perplexity-search/) | AI-powered web search via Perplexity Sonar. Returns direct answers with citations, not just links. | Stable |
 
 ---
 
