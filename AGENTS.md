@@ -28,10 +28,17 @@
 │   │   ├── tool.json      ← Function-calling schema
 │   │   ├── Dockerfile     ← Container deployment
 │   │   └── requirements.txt
-│   └── perplexity-search/ ← AI-powered web search tool
+│   ├── perplexity-search/ ← AI-powered web search tool
+│   │   ├── AGENTS.md      ← Tool-specific agent docs (read this if you enter this folder)
+│   │   ├── README.md      ← Human-readable docs
+│   │   ├── search.py      ← Source code (Python, stdlib only)
+│   │   ├── tool.json      ← Function-calling schema
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   └── file-converter/    ← File format converter
 │       ├── AGENTS.md      ← Tool-specific agent docs (read this if you enter this folder)
 │       ├── README.md      ← Human-readable docs
-│       ├── search.py      ← Source code (Python, stdlib only)
+│       ├── convert.py     ← Source code (stdlib + optional PyPDF2, openpyxl)
 │       ├── tool.json      ← Function-calling schema
 │       ├── Dockerfile
 │       └── requirements.txt
@@ -52,6 +59,82 @@
 |------|--------|------|----------|---------------|
 | **Weather API** | `tools/weather-api/` | HTTP GET | `/weather?city={city}&units={units}` | Yes — `OPENWEATHER_API_KEY` env var |
 | **Perplexity Search** | `tools/perplexity-search/` | HTTP GET | `/search?q={query}` | Yes — `PERPLEXITY_API_KEY` env var |
+| **File Converter** | `tools/file-converter/` | HTTP POST | `/convert` | No |
+
+---
+
+## Tool: File Converter
+
+### Quick reference
+
+- **What:** Converts between file formats — CSV, TSV, JSON, PDF, HTML, Markdown, XLSX, XML.
+- **Where:** `tools/file-converter/convert.py`
+- **How to call:** HTTP POST or Python import. Also: `GET /conversions` to list supported paths.
+
+### HTTP endpoint
+
+```
+POST /convert
+Content-Type: application/json
+
+{"content": "...", "from": "csv", "to": "json"}
+```
+
+### Parameters (JSON body)
+
+| Name      | Type   | Required | Description |
+|-----------|--------|----------|-------------|
+| `content` | string | YES      | File content. Raw text for text formats, base64-encoded for binary (PDF, XLSX). |
+| `from`    | string | YES      | Source format: `csv`, `tsv`, `json`, `pdf`, `html`, `markdown`, `xlsx`, `xml` |
+| `to`      | string | YES      | Target format: `csv`, `tsv`, `json`, `text`, `html`, `xml` |
+
+### Supported conversions
+
+csv→json, csv→tsv, tsv→json, json→csv, json→xml, html→text, html→json, markdown→text, markdown→html, xml→json, pdf→text, pdf→json, xlsx→json, xlsx→csv.
+
+### Response examples
+
+**CSV → JSON:**
+```json
+{"data": [{"name": "Alice", "age": "30"}], "rows": 1, "columns": ["name", "age"]}
+```
+
+**PDF → Text:**
+```json
+{"data": "full text", "pages": [{"page": 1, "text": "..."}], "page_count": 2, "characters": 5000}
+```
+
+**XLSX → JSON:**
+```json
+{"sheets": [{"sheet": "Sheet1", "headers": ["col1"], "data": [...], "rows": 10}], "sheet_count": 1}
+```
+
+### Error response
+
+```json
+{"error": "Unsupported conversion: foo → bar", "supported": [...]}
+```
+
+### Python import (no server)
+
+```python
+from convert import convert
+result = convert("name,age\nAlice,30", "csv", "json")
+```
+
+### Starting the server
+
+```bash
+pip install PyPDF2 openpyxl  # optional, only for PDF/XLSX
+python tools/file-converter/convert.py
+# Runs on http://localhost:8003
+```
+
+### Limits
+
+- No auth required — runs locally.
+- PDF/XLSX need optional pip packages (`PyPDF2`, `openpyxl`). All else is stdlib.
+- Binary content (PDF, XLSX) must be base64-encoded.
 
 ---
 
@@ -317,4 +400,4 @@ See `CONTRIBUTING.md` for full guidelines.
 - **Environment variables for secrets.** Never hardcode API keys.
 - **Each tool is self-contained.** No cross-tool dependencies.
 - **`tool.json` is the machine-readable contract.** Use it for function calling.
-- **Default port for tools is 8001+.** Weather API uses 8001, Perplexity Search uses 8002. Next tool should use 8003, etc.
+- **Default port for tools is 8001+.** Weather API uses 8001, Perplexity Search uses 8002, File Converter uses 8003. Next tool should use 8004, etc.
