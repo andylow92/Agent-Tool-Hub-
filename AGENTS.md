@@ -22,13 +22,15 @@
 │   ├── _template/         ← Template for creating new tools
 │   │   └── README.md
 │   ├── weather-api/       ← Weather lookup tool
-│   │   ├── README.md      ← Tool docs (inputs, outputs, setup)
+│   │   ├── AGENTS.md      ← Tool-specific agent docs (read this if you enter this folder)
+│   │   ├── README.md      ← Human-readable docs
 │   │   ├── weather.py     ← Source code (Python, stdlib only)
 │   │   ├── tool.json      ← Function-calling schema
 │   │   ├── Dockerfile     ← Container deployment
 │   │   └── requirements.txt
 │   └── perplexity-search/ ← AI-powered web search tool
-│       ├── README.md
+│       ├── AGENTS.md      ← Tool-specific agent docs (read this if you enter this folder)
+│       ├── README.md      ← Human-readable docs
 │       ├── search.py      ← Source code (Python, stdlib only)
 │       ├── tool.json      ← Function-calling schema
 │       ├── Dockerfile
