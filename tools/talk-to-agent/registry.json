@@ -1,0 +1,17 @@
+{
+  "weather-agent": {
+    "endpoint": "http://localhost:9001",
+    "name": "Weather Agent",
+    "registered_at": "2025-01-01T00:00:00+00:00"
+  },
+  "search-agent": {
+    "endpoint": "http://localhost:9002",
+    "name": "Search Agent",
+    "registered_at": "2025-01-01T00:00:00+00:00"
+  },
+  "file-converter": {
+    "endpoint": "http://localhost:9003",
+    "name": "File Converter Agent",
+    "registered_at": "2025-01-01T00:00:00+00:00"
+  }
+}
