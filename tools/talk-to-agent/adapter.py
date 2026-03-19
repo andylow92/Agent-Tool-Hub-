@@ -42,14 +42,12 @@ underlying tool. It supports two modes:
      default endpoint (configurable with --default-path).
 """
 
-import os
-import sys
-import json
 import argparse
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
+import json
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 
 def call_tool(tool_url: str, message: str, default_path: str = "/") -> str:
@@ -95,8 +93,9 @@ def _structured_call(tool_url: str, req: dict) -> str:
         http_req = Request(url, method="GET")
     elif method == "POST":
         data = json.dumps(body if body is not None else params).encode()
-        http_req = Request(url, data=data, method="POST",
-                           headers={"Content-Type": "application/json"})
+        http_req = Request(
+            url, data=data, method="POST", headers={"Content-Type": "application/json"}
+        )
     else:
         http_req = Request(url, method=method)
 
@@ -114,8 +113,7 @@ def _raw_call(tool_url: str, default_path: str, message: str) -> str:
     """Forward the raw message to the tool's default path as a POST body."""
     url = f"{tool_url.rstrip('/')}{default_path}"
     data = json.dumps({"message": message}).encode()
-    req = Request(url, data=data, method="POST",
-                  headers={"Content-Type": "application/json"})
+    req = Request(url, data=data, method="POST", headers={"Content-Type": "application/json"})
 
     try:
         with urlopen(req, timeout=30) as resp:
@@ -169,18 +167,24 @@ class AdapterHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/health":
-            self._respond(200, {
-                "status": "ok",
-                "agent_id": self.agent_id,
-                "wraps": self.tool_url,
-            })
+            self._respond(
+                200,
+                {
+                    "status": "ok",
+                    "agent_id": self.agent_id,
+                    "wraps": self.tool_url,
+                },
+            )
         else:
-            self._respond(200, {
-                "agent_id": self.agent_id,
-                "wraps": self.tool_url,
-                "protocol": "talk_to_agent",
-                "description": "Send POST with {request_id, from, message} to communicate.",
-            })
+            self._respond(
+                200,
+                {
+                    "agent_id": self.agent_id,
+                    "wraps": self.tool_url,
+                    "protocol": "talk_to_agent",
+                    "description": "Send POST with {request_id, from, message} to communicate.",
+                },
+            )
 
     def _respond(self, status: int, body: dict):
         self.send_response(status)
@@ -195,13 +199,16 @@ class AdapterHandler(BaseHTTPRequestHandler):
 def auto_register(registry_url: str, agent_id: str, adapter_port: int):
     """Register this adapter with the talk_to_agent registry."""
     import socket
+
     hostname = socket.gethostname()
 
-    payload = json.dumps({
-        "agent_id": agent_id,
-        "endpoint": f"http://{hostname}:{adapter_port}",
-        "name": f"{agent_id} (adapter)",
-    }).encode()
+    payload = json.dumps(
+        {
+            "agent_id": agent_id,
+            "endpoint": f"http://{hostname}:{adapter_port}",
+            "name": f"{agent_id} (adapter)",
+        }
+    ).encode()
 
     req = Request(
         f"{registry_url.rstrip('/')}/registry",
@@ -222,17 +229,28 @@ def main():
     parser = argparse.ArgumentParser(
         description="Wrap an HTTP tool to speak the talk_to_agent protocol."
     )
-    parser.add_argument("--tool-url", required=True,
-                        help="Base URL of the tool to wrap (e.g. http://localhost:8001)")
-    parser.add_argument("--port", type=int, default=9001,
-                        help="Port for this adapter to listen on (default: 9001)")
-    parser.add_argument("--agent-id", required=True,
-                        help="Agent identifier for this adapter (e.g. weather-agent)")
-    parser.add_argument("--default-path", default="/",
-                        help="Default path to call on the tool for raw messages (default: /)")
-    parser.add_argument("--register", default=None, metavar="REGISTRY_URL",
-                        help="Auto-register with a talk_to_agent registry "
-                             "(e.g. http://localhost:8004)")
+    parser.add_argument(
+        "--tool-url",
+        required=True,
+        help="Base URL of the tool to wrap (e.g. http://localhost:8001)",
+    )
+    parser.add_argument(
+        "--port", type=int, default=9001, help="Port for this adapter to listen on (default: 9001)"
+    )
+    parser.add_argument(
+        "--agent-id", required=True, help="Agent identifier for this adapter (e.g. weather-agent)"
+    )
+    parser.add_argument(
+        "--default-path",
+        default="/",
+        help="Default path to call on the tool for raw messages (default: /)",
+    )
+    parser.add_argument(
+        "--register",
+        default=None,
+        metavar="REGISTRY_URL",
+        help="Auto-register with a talk_to_agent registry (e.g. http://localhost:8004)",
+    )
     args = parser.parse_args()
 
     # Configure the handler class

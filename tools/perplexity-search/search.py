@@ -5,12 +5,12 @@ Wraps the Perplexity Sonar API to return direct answers with citations
 instead of raw search links. Any agent can call this over HTTP or import it.
 """
 
-import os
 import json
-import urllib.request
+import os
 import urllib.error
 import urllib.parse
-from http.server import HTTPServer, BaseHTTPRequestHandler
+import urllib.request
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 API_KEY = os.environ.get("PERPLEXITY_API_KEY", "")
 API_URL = "https://api.perplexity.ai/chat/completions"
@@ -42,9 +42,7 @@ def search(
         return {"error": f"Invalid model '{model}'. Use 'sonar' or 'sonar-pro'."}
 
     if recency and recency not in ("day", "week", "month", "year"):
-        return {
-            "error": f"Invalid recency '{recency}'. Use 'day', 'week', 'month', or 'year'."
-        }
+        return {"error": f"Invalid recency '{recency}'. Use 'day', 'week', 'month', or 'year'."}
 
     body = {
         "model": model,

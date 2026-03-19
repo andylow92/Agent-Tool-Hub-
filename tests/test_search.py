@@ -1,10 +1,10 @@
 """Tests for the perplexity-search tool."""
 
 import json
-import sys
 import os
-from unittest.mock import patch, MagicMock
+import sys
 from io import BytesIO
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools", "perplexity-search"))
 import search
@@ -33,10 +33,12 @@ class TestSearch:
 
     def test_successful_search(self):
         mock_data = {
-            "choices": [{
-                "message": {"content": "Test answer"},
-                "citations": ["https://example.com"],
-            }],
+            "choices": [
+                {
+                    "message": {"content": "Test answer"},
+                    "citations": ["https://example.com"],
+                }
+            ],
             "model": "sonar",
             "usage": {
                 "prompt_tokens": 10,
@@ -50,8 +52,10 @@ class TestSearch:
         mock_response.__enter__ = lambda s: s
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch.object(search, "API_KEY", "test-key"), \
-             patch("urllib.request.urlopen", return_value=mock_response):
+        with (
+            patch.object(search, "API_KEY", "test-key"),
+            patch("urllib.request.urlopen", return_value=mock_response),
+        ):
             result = search.search("What is Python?")
 
         assert result["answer"] == "Test answer"
@@ -60,8 +64,11 @@ class TestSearch:
 
     def test_network_error(self):
         import urllib.error
-        with patch.object(search, "API_KEY", "test-key"), \
-             patch("urllib.request.urlopen", side_effect=urllib.error.URLError("timeout")):
+
+        with (
+            patch.object(search, "API_KEY", "test-key"),
+            patch("urllib.request.urlopen", side_effect=urllib.error.URLError("timeout")),
+        ):
             result = search.search("test")
         assert "error" in result
         assert "Network error" in result["error"]

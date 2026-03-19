@@ -14,16 +14,15 @@ Endpoints:
   GET  /agents            — List agents with status info
 """
 
-import os
-import io
 import json
+import logging
+import os
 import time
 import uuid
-import logging
 from datetime import datetime, timezone
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
 
 DEFAULT_PORT = 8004
 DEFAULT_TIMEOUT_MS = 10000
@@ -114,15 +113,17 @@ def get_agents_with_status() -> dict:
     """Return registry entries enriched with last-known status info."""
     agents = []
     for agent_id, info in _registry.items():
-        agents.append({
-            "id": agent_id,
-            "name": info.get("name", agent_id),
-            "endpoint": info.get("endpoint"),
-            "registered_at": info.get("registered_at"),
-            "last_status": info.get("last_status"),
-            "last_contacted": info.get("last_contacted"),
-            "last_latency_ms": info.get("last_latency_ms"),
-        })
+        agents.append(
+            {
+                "id": agent_id,
+                "name": info.get("name", agent_id),
+                "endpoint": info.get("endpoint"),
+                "registered_at": info.get("registered_at"),
+                "last_status": info.get("last_status"),
+                "last_contacted": info.get("last_contacted"),
+                "last_latency_ms": info.get("last_latency_ms"),
+            }
+        )
     return {"agents": agents, "count": len(agents)}
 
 
@@ -130,9 +131,10 @@ def get_agents_with_status() -> dict:
 # Core: talk_to_agent
 # ---------------------------------------------------------------------------
 
-def talk_to_agent(target_agent: str, message: str,
-                  timeout_ms: int = DEFAULT_TIMEOUT_MS,
-                  hop_count: int = 0) -> dict:
+
+def talk_to_agent(
+    target_agent: str, message: str, timeout_ms: int = DEFAULT_TIMEOUT_MS, hop_count: int = 0
+) -> dict:
     """
     Send a verified message to another agent.
 
@@ -144,30 +146,40 @@ def talk_to_agent(target_agent: str, message: str,
 
     # --- Check hop count ---
     if hop_count >= MAX_HOP_COUNT:
-        result = _failure("max_depth_exceeded",
-                          f"Message has been relayed {hop_count} times, exceeding "
-                          f"the maximum depth of {MAX_HOP_COUNT}. Possible circular call.",
-                          request_id, start_time, target_agent)
+        result = _failure(
+            "max_depth_exceeded",
+            f"Message has been relayed {hop_count} times, exceeding "
+            f"the maximum depth of {MAX_HOP_COUNT}. Possible circular call.",
+            request_id,
+            start_time,
+            target_agent,
+        )
         return result
 
     # --- Look up target in registry ---
     agent_info = _registry.get(target_agent)
     if not agent_info:
-        result = _failure("unknown_agent",
-                          f"Agent '{target_agent}' is not registered. "
-                          f"Known agents: {', '.join(_registry.keys()) or 'none'}.",
-                          request_id, start_time, target_agent)
+        result = _failure(
+            "unknown_agent",
+            f"Agent '{target_agent}' is not registered. "
+            f"Known agents: {', '.join(_registry.keys()) or 'none'}.",
+            request_id,
+            start_time,
+            target_agent,
+        )
         return result
 
     endpoint = agent_info["endpoint"]
 
     # --- Build the request ---
-    payload = json.dumps({
-        "request_id": request_id,
-        "from": AGENT_ID,
-        "message": message,
-        "hop_count": hop_count + 1,
-    }).encode()
+    payload = json.dumps(
+        {
+            "request_id": request_id,
+            "from": AGENT_ID,
+            "message": message,
+            "hop_count": hop_count + 1,
+        }
+    ).encode()
 
     req = Request(
         endpoint,
@@ -184,48 +196,71 @@ def talk_to_agent(target_agent: str, message: str,
             raw = resp.read(MAX_RESPONSE_BYTES + 1)
 
             if len(raw) > MAX_RESPONSE_BYTES:
-                result = _failure("response_too_large",
-                                  f"Response from '{target_agent}' exceeded "
-                                  f"{MAX_RESPONSE_BYTES} bytes limit.",
-                                  request_id, start_time, target_agent)
+                result = _failure(
+                    "response_too_large",
+                    f"Response from '{target_agent}' exceeded {MAX_RESPONSE_BYTES} bytes limit.",
+                    request_id,
+                    start_time,
+                    target_agent,
+                )
                 return result
 
             try:
                 body = json.loads(raw)
             except json.JSONDecodeError:
-                result = _failure("invalid_response",
-                                  f"Response from '{target_agent}' is not valid JSON.",
-                                  request_id, start_time, target_agent)
+                result = _failure(
+                    "invalid_response",
+                    f"Response from '{target_agent}' is not valid JSON.",
+                    request_id,
+                    start_time,
+                    target_agent,
+                )
                 return result
 
     except HTTPError as e:
-        result = _failure("unreachable",
-                          f"HTTP {e.code} from '{target_agent}' at {endpoint}.",
-                          request_id, start_time, target_agent)
+        result = _failure(
+            "unreachable",
+            f"HTTP {e.code} from '{target_agent}' at {endpoint}.",
+            request_id,
+            start_time,
+            target_agent,
+        )
         return result
 
     except (URLError, OSError) as e:
-        result = _failure("unreachable",
-                          f"Could not reach '{target_agent}' at {endpoint}. "
-                          f"The agent may be offline or the endpoint misconfigured. "
-                          f"Detail: {e}",
-                          request_id, start_time, target_agent)
+        result = _failure(
+            "unreachable",
+            f"Could not reach '{target_agent}' at {endpoint}. "
+            f"The agent may be offline or the endpoint misconfigured. "
+            f"Detail: {e}",
+            request_id,
+            start_time,
+            target_agent,
+        )
         return result
 
     except TimeoutError:
-        result = _failure("timeout",
-                          f"Request to '{target_agent}' timed out after {timeout_ms}ms.",
-                          request_id, start_time, target_agent)
+        result = _failure(
+            "timeout",
+            f"Request to '{target_agent}' timed out after {timeout_ms}ms.",
+            request_id,
+            start_time,
+            target_agent,
+        )
         return result
 
     # --- Verify request_id ---
     returned_id = body.get("request_id")
     if returned_id != request_id:
-        result = _failure("request_id_mismatch",
-                          f"Response from '{target_agent}' returned request_id "
-                          f"'{returned_id}' but expected '{request_id}'. "
-                          f"The response cannot be verified.",
-                          request_id, start_time, target_agent)
+        result = _failure(
+            "request_id_mismatch",
+            f"Response from '{target_agent}' returned request_id "
+            f"'{returned_id}' but expected '{request_id}'. "
+            f"The response cannot be verified.",
+            request_id,
+            start_time,
+            target_agent,
+        )
         return result
 
     # --- Success ---
@@ -248,19 +283,22 @@ def talk_to_agent(target_agent: str, message: str,
         "latency_ms": latency_ms,
     }
 
-    audit({
-        "action": "talk",
-        "target": target_agent,
-        "request_id": request_id,
-        "status": "verified",
-        "latency_ms": latency_ms,
-    })
+    audit(
+        {
+            "action": "talk",
+            "target": target_agent,
+            "request_id": request_id,
+            "status": "verified",
+            "latency_ms": latency_ms,
+        }
+    )
 
     return result
 
 
-def _failure(error_code: str, message: str, request_id: str,
-             start_time: float, target_agent: str) -> dict:
+def _failure(
+    error_code: str, message: str, request_id: str, start_time: float, target_agent: str
+) -> dict:
     """Build a failure response and audit log it."""
     latency_ms = round((time.monotonic() - start_time) * 1000, 1)
 
@@ -270,14 +308,16 @@ def _failure(error_code: str, message: str, request_id: str,
         _registry[target_agent]["last_contacted"] = datetime.now(timezone.utc).isoformat()
         _registry[target_agent]["last_latency_ms"] = latency_ms
 
-    audit({
-        "action": "talk",
-        "target": target_agent,
-        "request_id": request_id,
-        "status": "failed",
-        "error": error_code,
-        "latency_ms": latency_ms,
-    })
+    audit(
+        {
+            "action": "talk",
+            "target": target_agent,
+            "request_id": request_id,
+            "status": "failed",
+            "error": error_code,
+            "latency_ms": latency_ms,
+        }
+    )
 
     return {
         "status": "failed",
@@ -293,10 +333,11 @@ def _failure(error_code: str, message: str, request_id: str,
 # HTTP Server
 # ---------------------------------------------------------------------------
 
-class TalkHandler(BaseHTTPRequestHandler):
 
+class TalkHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         import urllib.parse
+
         parsed = urllib.parse.urlparse(self.path)
 
         if parsed.path == "/registry":
@@ -306,20 +347,24 @@ class TalkHandler(BaseHTTPRequestHandler):
         elif parsed.path == "/health":
             self._respond(200, {"status": "ok", "agent_id": AGENT_ID})
         else:
-            self._respond(404, {
-                "error": "Not found",
-                "endpoints": {
-                    "POST /talk": "Send a verified message to another agent",
-                    "GET /registry": "List registered agents",
-                    "POST /registry": "Register or update an agent",
-                    "DELETE /registry/<id>": "Remove an agent",
-                    "GET /agents": "List agents with status info",
-                    "GET /health": "Health check",
+            self._respond(
+                404,
+                {
+                    "error": "Not found",
+                    "endpoints": {
+                        "POST /talk": "Send a verified message to another agent",
+                        "GET /registry": "List registered agents",
+                        "POST /registry": "Register or update an agent",
+                        "DELETE /registry/<id>": "Remove an agent",
+                        "GET /agents": "List agents with status info",
+                        "GET /health": "Health check",
+                    },
                 },
-            })
+            )
 
     def do_POST(self):
         import urllib.parse
+
         parsed = urllib.parse.urlparse(self.path)
         body = self._read_body()
         if body is None:
@@ -334,10 +379,11 @@ class TalkHandler(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         import urllib.parse
+
         parsed = urllib.parse.urlparse(self.path)
 
         if parsed.path.startswith("/registry/"):
-            agent_id = parsed.path[len("/registry/"):]
+            agent_id = parsed.path[len("/registry/") :]
             if not agent_id:
                 self._respond(400, {"error": "Missing agent ID in path"})
                 return
@@ -410,12 +456,12 @@ def main():
 
     print(f"talk_to_agent running on http://localhost:{port}")
     print(f"  Agent ID: {AGENT_ID}")
-    print(f"  POST /talk        — send a verified message to another agent")
-    print(f"  GET  /registry    — list registered agents")
-    print(f"  POST /registry    — register/update an agent")
-    print(f"  DELETE /registry/ — remove an agent")
-    print(f"  GET  /agents      — list agents with status info")
-    print(f"  GET  /health      — health check")
+    print("  POST /talk        — send a verified message to another agent")
+    print("  GET  /registry    — list registered agents")
+    print("  POST /registry    — register/update an agent")
+    print("  DELETE /registry/ — remove an agent")
+    print("  GET  /agents      — list agents with status info")
+    print("  GET  /health      — health check")
     print(f"\nRegistry: {len(_registry)} agent(s) loaded from {REGISTRY_FILE}")
     for aid, info in _registry.items():
         print(f"  {aid} → {info.get('endpoint')} ({info.get('name', aid)})")

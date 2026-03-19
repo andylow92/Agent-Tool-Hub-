@@ -5,13 +5,12 @@ Wraps the OpenWeatherMap API and returns structured weather data
 that agents can easily parse and reason about.
 """
 
-import os
-import sys
 import json
-import urllib.request
+import os
 import urllib.error
 import urllib.parse
-from http.server import HTTPServer, BaseHTTPRequestHandler
+import urllib.request
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
 BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
@@ -34,11 +33,13 @@ def get_weather(city: str, units: str = "metric") -> dict:
     if units not in ("metric", "imperial", "standard"):
         return {"error": f"Invalid units '{units}'. Use 'metric', 'imperial', or 'standard'."}
 
-    params = urllib.parse.urlencode({
-        "q": city,
-        "appid": API_KEY,
-        "units": units,
-    })
+    params = urllib.parse.urlencode(
+        {
+            "q": city,
+            "appid": API_KEY,
+            "units": units,
+        }
+    )
     url = f"{BASE_URL}?{params}"
 
     try:
