@@ -35,10 +35,19 @@
 │   │   ├── tool.json      ← Function-calling schema
 │   │   ├── Dockerfile
 │   │   └── requirements.txt
-│   └── file-converter/    ← File format converter
+│   ├── file-converter/    ← File format converter
+│   │   ├── AGENTS.md      ← Tool-specific agent docs (read this if you enter this folder)
+│   │   ├── README.md      ← Human-readable docs
+│   │   ├── convert.py     ← Source code (stdlib + optional PyPDF2, openpyxl)
+│   │   ├── tool.json      ← Function-calling schema
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   └── talk-to-agent/     ← Verified inter-agent communication
 │       ├── AGENTS.md      ← Tool-specific agent docs (read this if you enter this folder)
 │       ├── README.md      ← Human-readable docs
-│       ├── convert.py     ← Source code (stdlib + optional PyPDF2, openpyxl)
+│       ├── agent_talk.py  ← Source code (Python, stdlib only)
+│       ├── adapter.py     ← Adapter to wrap existing tools for the protocol
+│       ├── registry.json  ← Default agent registry
 │       ├── tool.json      ← Function-calling schema
 │       ├── Dockerfile
 │       └── requirements.txt
@@ -60,6 +69,95 @@
 | **Weather API** | `tools/weather-api/` | HTTP GET | `/weather?city={city}&units={units}` | Yes — `OPENWEATHER_API_KEY` env var |
 | **Perplexity Search** | `tools/perplexity-search/` | HTTP GET | `/search?q={query}` | Yes — `PERPLEXITY_API_KEY` env var |
 | **File Converter** | `tools/file-converter/` | HTTP POST | `/convert` | No |
+| **Talk to Agent** | `tools/talk-to-agent/` | HTTP POST | `/talk` | No — `AGENT_ID` env var optional |
+
+---
+
+## Tool: Talk to Agent
+
+### Quick reference
+
+- **What:** Verified inter-agent communication. Sends a message to another agent, verifies the response with a `request_id` round-trip, and returns either a verified response or an explicit failure with `response: null`.
+- **Where:** `tools/talk-to-agent/agent_talk.py`
+- **How to call:** HTTP POST or Python import. Also: `GET /agents` to discover registered agents.
+
+### HTTP endpoint
+
+```
+POST /talk
+Content-Type: application/json
+
+{"target_agent": "weather-agent", "message": "What is the weather in London?"}
+```
+
+### Parameters (JSON body)
+
+| Name           | Type   | Required | Default | Description |
+|----------------|--------|----------|---------|-------------|
+| `target_agent` | string | YES      | —       | ID of the agent to contact (must be in registry) |
+| `message`      | string | YES      | —       | Message to send (plain text or structured JSON) |
+| `timeout_ms`   | number | no       | 10000   | Max wait time in milliseconds |
+
+### Response on success
+
+```json
+{
+  "status": "verified",
+  "source": "weather-agent",
+  "response": "...",
+  "request_id": "uuid",
+  "timestamp": "ISO-8601",
+  "latency_ms": 234.5
+}
+```
+
+### Response on failure
+
+```json
+{
+  "status": "failed",
+  "error": "unreachable",
+  "message": "Could not reach 'weather-agent'...",
+  "response": null,
+  "request_id": "uuid",
+  "latency_ms": 10001.2
+}
+```
+
+Error codes: `unknown_agent`, `unreachable`, `timeout`, `invalid_response`, `request_id_mismatch`, `response_too_large`, `max_depth_exceeded`.
+
+### Registry management
+
+```
+GET  /registry             — list all agents
+POST /registry             — register: {"agent_id": "...", "endpoint": "...", "name": "..."}
+DELETE /registry/<id>      — remove an agent
+GET  /agents               — list agents with status info (last_status, last_latency_ms)
+```
+
+### Adapter for existing tools
+
+```bash
+# Wrap weather-api (8001) to speak the talk_to_agent protocol
+python adapter.py --tool-url http://localhost:8001 --port 9001 --agent-id weather-agent
+```
+
+### Starting the server
+
+```bash
+export AGENT_ID=orchestrator  # optional
+python tools/talk-to-agent/agent_talk.py
+# Runs on http://localhost:8004
+```
+
+### Limits
+
+- No auth required — runs locally.
+- Stdlib only — zero pip dependencies.
+- 10s default timeout, configurable per call.
+- 100KB max response size.
+- 5-hop max depth (circular call protection).
+- Structured audit log written to `audit.log`.
 
 ---
 
@@ -400,4 +498,4 @@ See `CONTRIBUTING.md` for full guidelines.
 - **Environment variables for secrets.** Never hardcode API keys.
 - **Each tool is self-contained.** No cross-tool dependencies.
 - **`tool.json` is the machine-readable contract.** Use it for function calling.
-- **Default port for tools is 8001+.** Weather API uses 8001, Perplexity Search uses 8002, File Converter uses 8003. Next tool should use 8004, etc.
+- **Default port for tools is 8001+.** Weather API uses 8001, Perplexity Search uses 8002, File Converter uses 8003, Talk to Agent uses 8004. Next tool should use 8005, etc.

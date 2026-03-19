@@ -1,0 +1,23 @@
+{
+  "name": "talk_to_agent",
+  "description": "Use this tool ANY time you need to ask another agent a question or request information from another agent. NEVER answer on behalf of another agent without using this tool. If this tool returns a failure, you MUST tell the user that the other agent could not be reached — do not guess or make up an answer.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "target_agent": {
+        "type": "string",
+        "description": "Identifier of the agent to contact (e.g. 'weather-agent', 'billing-agent', 'search-agent'). Use GET /agents to discover available agents."
+      },
+      "message": {
+        "type": "string",
+        "description": "The message or question to send to the target agent. Can be plain text or a structured JSON string with routing info (e.g. {\"path\": \"/weather\", \"params\": {\"city\": \"London\"}})"
+      },
+      "timeout_ms": {
+        "type": "number",
+        "default": 10000,
+        "description": "Maximum time in milliseconds to wait for a response. Default: 10000 (10 seconds)."
+      }
+    },
+    "required": ["target_agent", "message"]
+  }
+}

@@ -1,0 +1,2 @@
+# No external dependencies — stdlib only.
+# This file exists for consistency with the other tools in the hub.

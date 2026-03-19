@@ -15,6 +15,7 @@ This repo is a shared toolbox for people building agent systems, copilots, assis
 | [weather-api](tools/weather-api/) | Get current weather for any city via OpenWeatherMap. Zero dependencies, standalone HTTP server. | Stable |
 | [perplexity-search](tools/perplexity-search/) | AI-powered web search via Perplexity Sonar. Returns direct answers with citations, not just links. | Stable |
 | [file-converter](tools/file-converter/) | Convert between file formats (CSV, JSON, PDF, HTML, Markdown, XLSX, XML). Extracts text from PDFs and spreadsheets. | Stable |
+| [talk-to-agent](tools/talk-to-agent/) | Verified inter-agent communication. Prevents hallucinated responses by requiring request_id round-trip verification. Includes adapter for wrapping existing tools. | Stable |
 
 ---
 
