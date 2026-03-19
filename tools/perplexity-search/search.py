@@ -105,6 +105,9 @@ class SearchHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/health":
+            self._respond(200, {"status": "ok", "tool": "perplexity-search"})
+            return
         if parsed.path != "/search":
             self._respond(404, {"error": "Not found. Use GET /search?q=your+question"})
             return
