@@ -1,10 +1,9 @@
 """Tests for the talk-to-agent tool."""
 
 import json
-import sys
 import os
-from unittest.mock import patch, MagicMock
-from io import BytesIO
+import sys
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools", "talk-to-agent"))
 import agent_talk
@@ -80,11 +79,13 @@ class TestTalkToAgent:
 
         def mock_urlopen(req, timeout=None):
             request_id = json.loads(req.data)["request_id"]
-            response_data = json.dumps({
-                "request_id": request_id,
-                "from": "test",
-                "response": "Hello back!",
-            }).encode()
+            response_data = json.dumps(
+                {
+                    "request_id": request_id,
+                    "from": "test",
+                    "response": "Hello back!",
+                }
+            ).encode()
             mock_resp = MagicMock()
             mock_resp.read.return_value = response_data
             mock_resp.__enter__ = lambda s: s
@@ -102,11 +103,13 @@ class TestTalkToAgent:
         agent_talk.register_agent("test", "http://localhost:9001")
 
         mock_resp = MagicMock()
-        mock_resp.read.return_value = json.dumps({
-            "request_id": "wrong-id",
-            "from": "test",
-            "response": "data",
-        }).encode()
+        mock_resp.read.return_value = json.dumps(
+            {
+                "request_id": "wrong-id",
+                "from": "test",
+                "response": "data",
+            }
+        ).encode()
         mock_resp.__enter__ = lambda s: s
         mock_resp.__exit__ = MagicMock(return_value=False)
 
@@ -118,6 +121,7 @@ class TestTalkToAgent:
 
     def test_unreachable_agent(self):
         from urllib.error import URLError
+
         agent_talk.register_agent("test", "http://localhost:9001")
 
         with patch("agent_talk.urlopen", side_effect=URLError("Connection refused")):

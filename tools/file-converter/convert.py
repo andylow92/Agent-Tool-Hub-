@@ -6,14 +6,14 @@ CSV, TSV, JSON, PDF, HTML, Markdown, XLSX, XML.
 Returns structured data agents can parse and reason about.
 """
 
-import os
-import io
-import csv
-import json
 import base64
+import csv
+import io
+import json
+import os
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 DEFAULT_PORT = 8003
 
@@ -23,9 +23,11 @@ CONVERSIONS = {}
 
 def conversion(from_fmt, to_fmt):
     """Decorator to register a conversion function."""
+
     def decorator(func):
         CONVERSIONS[(from_fmt, to_fmt)] = func
         return func
+
     return decorator
 
 
@@ -33,8 +35,10 @@ def conversion(from_fmt, to_fmt):
 # Text extractors
 # ---------------------------------------------------------------------------
 
+
 class _HTMLTextExtractor(HTMLParser):
     """Strip HTML tags and return plain text."""
+
     def __init__(self):
         super().__init__()
         self._parts = []
@@ -61,6 +65,7 @@ class _HTMLTextExtractor(HTMLParser):
 def _strip_markdown(text: str) -> str:
     """Lightweight Markdown-to-plain-text conversion (no dependencies)."""
     import re
+
     text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
     text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
     text = re.sub(r"\*(.+?)\*", r"\1", text)
@@ -79,6 +84,7 @@ def _strip_markdown(text: str) -> str:
 # ---------------------------------------------------------------------------
 # CSV / TSV conversions
 # ---------------------------------------------------------------------------
+
 
 @conversion("csv", "json")
 def csv_to_json(content: str, **_) -> dict:
@@ -100,7 +106,7 @@ def json_to_csv(content: str, **_) -> dict:
     if isinstance(data, dict) and "data" in data:
         data = data["data"]
     if not isinstance(data, list) or len(data) == 0:
-        return {"error": "JSON must be an array of objects (or {\"data\": [...]})"}
+        return {"error": 'JSON must be an array of objects (or {"data": [...]})'}
 
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=list(data[0].keys()))
@@ -125,6 +131,7 @@ def csv_to_tsv(content: str, **_) -> dict:
 # HTML conversions
 # ---------------------------------------------------------------------------
 
+
 @conversion("html", "text")
 def html_to_text(content: str, **_) -> dict:
     extractor = _HTMLTextExtractor()
@@ -137,6 +144,7 @@ def html_to_text(content: str, **_) -> dict:
 def html_to_json(content: str, **_) -> dict:
     """Extract tables from HTML into JSON arrays."""
     import re
+
     tables = []
     table_pattern = re.compile(r"<table[^>]*>(.*?)</table>", re.DOTALL | re.IGNORECASE)
     row_pattern = re.compile(r"<tr[^>]*>(.*?)</tr>", re.DOTALL | re.IGNORECASE)
@@ -157,7 +165,11 @@ def html_to_json(content: str, **_) -> dict:
     if not tables:
         extractor = _HTMLTextExtractor()
         extractor.feed(content)
-        return {"data": extractor.get_text(), "tables": [], "note": "No tables found, returning plain text."}
+        return {
+            "data": extractor.get_text(),
+            "tables": [],
+            "note": "No tables found, returning plain text.",
+        }
 
     return {"tables": tables, "table_count": len(tables)}
 
@@ -165,6 +177,7 @@ def html_to_json(content: str, **_) -> dict:
 # ---------------------------------------------------------------------------
 # Markdown conversions
 # ---------------------------------------------------------------------------
+
 
 @conversion("markdown", "text")
 def markdown_to_text(content: str, **_) -> dict:
@@ -176,6 +189,7 @@ def markdown_to_text(content: str, **_) -> dict:
 def markdown_to_html(content: str, **_) -> dict:
     """Basic Markdown-to-HTML (covers common patterns, no external deps)."""
     import re
+
     html = content
 
     # Code blocks (``` ... ```)
@@ -200,6 +214,7 @@ def markdown_to_html(content: str, **_) -> dict:
 # ---------------------------------------------------------------------------
 # XML conversions
 # ---------------------------------------------------------------------------
+
 
 def _xml_to_dict(element):
     """Recursively convert an XML element to a dict."""
@@ -271,6 +286,7 @@ def json_to_xml(content: str, **_) -> dict:
 # PDF conversion (requires PyPDF2 — optional dependency)
 # ---------------------------------------------------------------------------
 
+
 @conversion("pdf", "text")
 def pdf_to_text(content: str, **_) -> dict:
     try:
@@ -290,7 +306,12 @@ def pdf_to_text(content: str, **_) -> dict:
         pages.append({"page": i + 1, "text": text})
 
     full_text = "\n\n".join(p["text"] for p in pages)
-    return {"data": full_text, "pages": pages, "page_count": len(pages), "characters": len(full_text)}
+    return {
+        "data": full_text,
+        "pages": pages,
+        "page_count": len(pages),
+        "characters": len(full_text),
+    }
 
 
 @conversion("pdf", "json")
@@ -304,6 +325,7 @@ def pdf_to_json(content: str, **_) -> dict:
 # ---------------------------------------------------------------------------
 # XLSX conversion (requires openpyxl — optional dependency)
 # ---------------------------------------------------------------------------
+
 
 @conversion("xlsx", "json")
 def xlsx_to_json(content: str, **_) -> dict:
@@ -357,9 +379,10 @@ def xlsx_to_csv(content: str, **_) -> dict:
 # Utility: list supported conversions
 # ---------------------------------------------------------------------------
 
+
 def list_conversions() -> dict:
     paths = []
-    for (from_fmt, to_fmt) in sorted(CONVERSIONS.keys()):
+    for from_fmt, to_fmt in sorted(CONVERSIONS.keys()):
         paths.append({"from": from_fmt, "to": to_fmt})
     return {"conversions": paths, "count": len(paths)}
 
@@ -393,11 +416,13 @@ def convert(content: str, from_fmt: str, to_fmt: str) -> dict:
 # HTTP Server
 # ---------------------------------------------------------------------------
 
+
 class ConvertHandler(BaseHTTPRequestHandler):
     """HTTP handler for file conversion."""
 
     def do_GET(self):
         import urllib.parse
+
         parsed = urllib.parse.urlparse(self.path)
 
         if parsed.path == "/health":
@@ -408,16 +433,20 @@ class ConvertHandler(BaseHTTPRequestHandler):
             self._respond(200, list_conversions())
             return
 
-        self._respond(404, {
-            "error": "Not found. Use POST /convert or GET /conversions.",
-            "endpoints": {
-                "POST /convert": "Convert file content (JSON body with 'content', 'from', 'to')",
-                "GET /conversions": "List all supported conversion paths",
-            }
-        })
+        self._respond(
+            404,
+            {
+                "error": "Not found. Use POST /convert or GET /conversions.",
+                "endpoints": {
+                    "POST /convert": "Convert file content (JSON body: content, from, to)",
+                    "GET /conversions": "List all supported conversion paths",
+                },
+            },
+        )
 
     def do_POST(self):
         import urllib.parse
+
         parsed = urllib.parse.urlparse(self.path)
 
         if parsed.path != "/convert":
@@ -467,10 +496,10 @@ def main():
     port = int(os.environ.get("PORT", DEFAULT_PORT))
     server = HTTPServer(("0.0.0.0", port), ConvertHandler)
     print(f"File Converter running on http://localhost:{port}")
-    print(f"  POST /convert  — convert file content")
-    print(f"  GET  /conversions — list supported formats")
-    print(f"\nSupported conversions:")
-    for (f, t) in sorted(CONVERSIONS.keys()):
+    print("  POST /convert  — convert file content")
+    print("  GET  /conversions — list supported formats")
+    print("\nSupported conversions:")
+    for f, t in sorted(CONVERSIONS.keys()):
         print(f"  {f} → {t}")
 
     try:

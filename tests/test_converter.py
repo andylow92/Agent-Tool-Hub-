@@ -1,8 +1,8 @@
 """Tests for the file-converter tool."""
 
 import json
-import sys
 import os
+import sys
 from io import BytesIO
 from unittest.mock import MagicMock
 
@@ -28,19 +28,19 @@ class TestCSVConversions:
         assert result["data"][0]["name"] == "Alice"
 
     def test_json_to_csv(self):
-        json_content = json.dumps([
-            {"name": "Alice", "age": 30},
-            {"name": "Bob", "age": 25},
-        ])
+        json_content = json.dumps(
+            [
+                {"name": "Alice", "age": 30},
+                {"name": "Bob", "age": 25},
+            ]
+        )
         result = convert.convert(json_content, "json", "csv")
         assert "error" not in result
         assert result["rows"] == 2
         assert "Alice" in result["data"]
 
     def test_json_to_csv_with_data_key(self):
-        json_content = json.dumps({
-            "data": [{"name": "Alice"}, {"name": "Bob"}]
-        })
+        json_content = json.dumps({"data": [{"name": "Alice"}, {"name": "Bob"}]})
         result = convert.convert(json_content, "json", "csv")
         assert result["rows"] == 2
 

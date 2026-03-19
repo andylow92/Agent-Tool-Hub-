@@ -1,11 +1,10 @@
 """Tests for the weather-api tool."""
 
 import json
-import sys
 import os
-from unittest.mock import patch, MagicMock
-from http.server import HTTPServer
+import sys
 from io import BytesIO
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools", "weather-api"))
 import weather
@@ -50,8 +49,10 @@ class TestGetWeather:
         mock_response.__enter__ = lambda s: s
         mock_response.__exit__ = MagicMock(return_value=False)
 
-        with patch.object(weather, "API_KEY", "test-key"), \
-             patch("urllib.request.urlopen", return_value=mock_response):
+        with (
+            patch.object(weather, "API_KEY", "test-key"),
+            patch("urllib.request.urlopen", return_value=mock_response),
+        ):
             result = weather.get_weather("London", "metric")
 
         assert result["city"] == "London"
@@ -63,8 +64,12 @@ class TestGetWeather:
 
     def test_network_error(self):
         import urllib.error
-        with patch.object(weather, "API_KEY", "test-key"), \
-             patch("urllib.request.urlopen", side_effect=urllib.error.URLError("Connection refused")):
+
+        err = urllib.error.URLError("Connection refused")
+        with (
+            patch.object(weather, "API_KEY", "test-key"),
+            patch("urllib.request.urlopen", side_effect=err),
+        ):
             result = weather.get_weather("London")
         assert "error" in result
         assert "Network error" in result["error"]
