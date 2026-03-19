@@ -16,6 +16,10 @@ This repo is a shared toolbox for people building agent systems, copilots, assis
 
 ---
 
+> **Are you an AI agent?** Read [`AGENTS.md`](AGENTS.md) — it has everything you need to understand and use this repo.
+
+---
+
 ## Why This Exists
 
 People building AI agents often end up creating the same kinds of tools again and again: file readers, search wrappers, browser helpers, code runners, API adapters, memory utilities, and other small building blocks.
