@@ -16,6 +16,9 @@ This repo is a shared toolbox for people building agent systems, copilots, assis
 | [perplexity-search](tools/perplexity-search/) | AI-powered web search via Perplexity Sonar. Returns direct answers with citations, not just links. | Stable |
 | [file-converter](tools/file-converter/) | Convert between file formats (CSV, JSON, PDF, HTML, Markdown, XLSX, XML). Extracts text from PDFs and spreadsheets. | Stable |
 | [talk-to-agent](tools/talk-to-agent/) | Verified inter-agent communication. Prevents hallucinated responses by requiring request_id round-trip verification. Includes adapter for wrapping existing tools. | Stable |
+| [web-scraper](tools/web-scraper/) | Fetch any URL and return clean, readable text. Strips HTML, scripts, and styles. Extracts title and meta description. | Stable |
+| [email-sender](tools/email-sender/) | Send emails via SMTP (Gmail, SendGrid, AWS SES, etc.). Supports plain text and HTML bodies, CC, and BCC. | Stable |
+| [scheduler](tools/scheduler/) | Cron-like task scheduler. Agents can schedule HTTP callbacks at specific times or recurring intervals. Jobs persist across restarts. | Stable |
 
 ---
 

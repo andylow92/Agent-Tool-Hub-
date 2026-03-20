@@ -44,3 +44,35 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  web-scraper:
+    build: tools/web-scraper
+    ports:
+      - "8006:8006"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8006/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  email-sender:
+    build: tools/email-sender
+    ports:
+      - "8008:8008"
+    env_file:
+      - tools/email-sender/.env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8008/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  scheduler:
+    build: tools/scheduler
+    ports:
+      - "8010:8010"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

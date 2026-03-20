@@ -1,0 +1,36 @@
+{
+  "name": "send_email",
+  "description": "Send an email via SMTP. Supports plain text and HTML bodies, CC, and BCC.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "to": {
+        "type": "string",
+        "description": "Recipient email address (comma-separated for multiple)"
+      },
+      "subject": {
+        "type": "string",
+        "description": "Email subject line"
+      },
+      "body": {
+        "type": "string",
+        "description": "Email body content"
+      },
+      "body_type": {
+        "type": "string",
+        "enum": ["plain", "html"],
+        "default": "plain",
+        "description": "'plain' for text or 'html' for HTML content"
+      },
+      "cc": {
+        "type": "string",
+        "description": "CC recipients (comma-separated)"
+      },
+      "bcc": {
+        "type": "string",
+        "description": "BCC recipients (comma-separated)"
+      }
+    },
+    "required": ["to", "subject", "body"]
+  }
+}
