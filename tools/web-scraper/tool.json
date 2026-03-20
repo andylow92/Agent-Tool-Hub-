@@ -1,0 +1,19 @@
+{
+  "name": "web_scrape",
+  "description": "Fetch a URL and return its content as clean, readable text. Strips HTML tags, scripts, and styles. Extracts page title and meta description.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "The URL to fetch and extract text from (e.g., 'https://example.com')"
+      },
+      "timeout": {
+        "type": "integer",
+        "default": 10,
+        "description": "Request timeout in seconds"
+      }
+    },
+    "required": ["url"]
+  }
+}

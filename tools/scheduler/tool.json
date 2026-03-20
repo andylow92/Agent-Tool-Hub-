@@ -1,0 +1,41 @@
+{
+  "name": "schedule_job",
+  "description": "Schedule an HTTP callback at a specific time or recurring interval. Jobs persist across restarts.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "callback_url": {
+        "type": "string",
+        "description": "URL to call when the job fires"
+      },
+      "run_at": {
+        "type": "string",
+        "description": "ISO 8601 datetime for one-shot jobs (e.g., '2025-06-01T12:00:00Z')"
+      },
+      "interval_seconds": {
+        "type": "integer",
+        "description": "Repeat interval in seconds (0 = one-shot)"
+      },
+      "method": {
+        "type": "string",
+        "enum": ["GET", "POST"],
+        "default": "POST",
+        "description": "HTTP method for the callback"
+      },
+      "payload": {
+        "type": "object",
+        "description": "JSON body to send with POST callbacks"
+      },
+      "name": {
+        "type": "string",
+        "description": "Human-readable job name"
+      },
+      "max_runs": {
+        "type": "integer",
+        "default": 0,
+        "description": "Max number of executions (0 = unlimited for intervals)"
+      }
+    },
+    "required": ["callback_url"]
+  }
+}

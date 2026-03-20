@@ -13,5 +13,20 @@
     "endpoint": "http://localhost:9003",
     "name": "File Converter Agent",
     "registered_at": "2025-01-01T00:00:00+00:00"
+  },
+  "web-scraper": {
+    "endpoint": "http://localhost:9004",
+    "name": "Web Scraper Agent",
+    "registered_at": "2025-01-01T00:00:00+00:00"
+  },
+  "email-sender": {
+    "endpoint": "http://localhost:9005",
+    "name": "Email Sender Agent",
+    "registered_at": "2025-01-01T00:00:00+00:00"
+  },
+  "scheduler": {
+    "endpoint": "http://localhost:9006",
+    "name": "Scheduler Agent",
+    "registered_at": "2025-01-01T00:00:00+00:00"
   }
 }
