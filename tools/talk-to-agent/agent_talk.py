@@ -452,7 +452,21 @@ def main():
     _load_registry()
 
     port = int(os.environ.get("PORT", DEFAULT_PORT))
-    server = HTTPServer(("0.0.0.0", port), TalkHandler)
+    HTTPServer.allow_reuse_address = True
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            server = HTTPServer(("0.0.0.0", port), TalkHandler)
+            break
+        except OSError:
+            if attempt < max_retries - 1:
+                print(f"Port {port} in use, trying {port + 1}...")
+                port += 1
+            else:
+                raise SystemExit(
+                    f"Error: Could not bind to any port in range "
+                    f"{port - max_retries + 1}-{port}. Free a port or set PORT env var."
+                )
 
     print(f"talk_to_agent running on http://localhost:{port}")
     print(f"  Agent ID: {AGENT_ID}")
