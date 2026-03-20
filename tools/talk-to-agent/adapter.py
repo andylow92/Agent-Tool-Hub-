@@ -262,8 +262,23 @@ def main():
     if args.register:
         auto_register(args.register, args.agent_id, args.port)
 
-    server = HTTPServer(("0.0.0.0", args.port), AdapterHandler)
-    print(f"Agent adapter '{args.agent_id}' running on http://localhost:{args.port}")
+    HTTPServer.allow_reuse_address = True
+    port = args.port
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            server = HTTPServer(("0.0.0.0", port), AdapterHandler)
+            break
+        except OSError:
+            if attempt < max_retries - 1:
+                print(f"Port {port} in use, trying {port + 1}...")
+                port += 1
+            else:
+                raise SystemExit(
+                    f"Error: Could not bind to any port in range "
+                    f"{port - max_retries + 1}-{port}. Free a port or set PORT env var."
+                )
+    print(f"Agent adapter '{args.agent_id}' running on http://localhost:{port}")
     print(f"  Wrapping tool at: {args.tool_url}")
     print(f"  Default path:     {args.default_path}")
 

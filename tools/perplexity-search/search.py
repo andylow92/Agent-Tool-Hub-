@@ -142,7 +142,21 @@ def main():
         print("WARNING: PERPLEXITY_API_KEY is not set. Requests will return errors.")
         print("Get a key at https://docs.perplexity.ai/")
 
-    server = HTTPServer(("0.0.0.0", port), SearchHandler)
+    HTTPServer.allow_reuse_address = True
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            server = HTTPServer(("0.0.0.0", port), SearchHandler)
+            break
+        except OSError:
+            if attempt < max_retries - 1:
+                print(f"Port {port} in use, trying {port + 1}...")
+                port += 1
+            else:
+                raise SystemExit(
+                    f"Error: Could not bind to any port in range "
+                    f"{port - max_retries + 1}-{port}. Free a port or set PORT env var."
+                )
     print(f"Perplexity Search running on http://localhost:{port}/search")
     print(f"Example: http://localhost:{port}/search?q=What+is+quantum+computing")
 
